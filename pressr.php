@@ -120,10 +120,26 @@ remove_action( 'wp_head', 'adjacent_posts_rel_link_wp_head', 10, 0 );
 // Remove HTML comments
 
 function callback( $buffer ) {
+
+	// Remove all HTML comments
     $buffer = preg_replace( '/<!--(.*)-->/Uis', '', $buffer );
+
+    //return $buffer;
+
+    // Remove carriage returns, new lines and tabs
     $buffer = str_replace( "\r", '', $buffer );
     $buffer = str_replace( "\n", '', $buffer );   
+    $buffer = str_replace( "\t", '', $buffer );   
+
+	// Remove spaces between HTML tags    
     $buffer = preg_replace( '/(\>)\s*(\<)/m', '$1$2', $buffer );
+
+    // Remove double spaces until there are none left (looping round removes instances of more than 2 spaces in a row)
+    $count = 1;
+    while ( $count >= 1 ) {
+    	$buffer = str_replace( '  ', ' ', $buffer, $count );
+    }    
+
     return $buffer;
 }
 
@@ -183,11 +199,6 @@ function prevent_ms_icon_metatag( $meta_tags ) {
 
 add_filter( 'site_icon_meta_tags','prevent_ms_icon_metatag' );
 
-// Remove the annoying:
-// <style type="text/css">.recentcomments a{display:inline !important;padding:0 !important;margin:0 !important;}</style>.
-
-add_filter( 'show_recent_comments_widget_style', '__return_false' );
-
 // Switch off Pingbacks
 
 // Not sure if this reduces code - need to look
@@ -213,3 +224,7 @@ add_action(
 	},
 	100
 );
+
+// Remove WP DNS-Prefetch
+
+remove_action( 'wp_head', 'wp_resource_hints', 2 );

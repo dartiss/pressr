@@ -1,5 +1,5 @@
 <?php
-/*
+/**
 Plugin Name: Pressr
 Plugin URI: https://github.com/dartiss/pressr
 Description: 🗜Reduce page size, creating smaller, more sustainable, site output.
@@ -7,10 +7,11 @@ Version: 0.1.0
 Author: dartiss
 Author URI: https://artiss.blog
 Text Domain: pressr
-*/
 
-/*
+@package Pressr
+ */
 
+/**
 Note for anybody viewing this...
 
 This plugin is in the earliest, most-draft state that you can imagine and the code will not be neat!
@@ -20,209 +21,276 @@ Eventually, there will be an admin back-end to allow all of the following to be 
 All of the code has been reviewed to make sure it does what it should
 
 Kudos to WP Toolbelt (https://github.com/BinaryMoon/wp-toolbelt/blob/master/modules/cleanup/module.php) for some of the code
-*/
-
-/*
 
 To Do:
 
-Admin back-end
-    Tips
-    Add feature pointer
+- Continue to add compression code
+	- Review various page outputs to see what can be removed
+- Admin back-end
+	- Tips
+	- Add feature pointer
+- Add compression options for WP Admin
+ */
 
-*/
+/**
+ * Add meta to plugin details
+ *
+ * Add options to plugin meta line
+ *
+ * @param  string $links Current links.
+ * @param  string $file  File in use.
+ *
+ * @return string        Links, now with settings added
+ */
+function pressr_add_plugin_meta( $links, $file ) {
 
-function pressr_set_plugin_meta( $links, $file ) {
+	if ( strpos( $file, 'pressr.php' ) !== false ) {
 
-    if ( strpos( $file, 'pressr.php' ) !== false ) {
+		// Add link to Github repo.
+		$links = array_merge( $links, array( '<a href="https://github.com/dartiss/pressr">' . __( 'Github', 'pressr' ) . '</a>' ) ); 
 
-        $links = array_merge( $links, array( '<a href="https://github.com/dartiss/pressr">' . __( 'Github', 'pressr' ) . '</a>' ) ); 
+		// Add link to support forum.
+		$links = array_merge( $links, array( '<a href="http://wordpress.org/support/plugin/pressr">' . __( 'Support', 'pressr' ) . '</a>' ) );
 
-        $links = array_merge( $links, array( '<a href="http://wordpress.org/support/plugin/pressr">' . __( 'Support', 'pressr' ) . '</a>' ) );
+		// Add link to a donation page.
+		$links = array_merge( $links, array( '<a href="https://artiss.blog/donate">' . __( 'Donate', 'pressr' ) . '</a>' ) );
 
-        $links = array_merge( $links, array( '<a href="https://artiss.blog/donate">' . __( 'Donate', 'pressr' ) . '</a>' ) );
+		// Add link to review page.
+		$links = array_merge( $links, array( '<a href="https://wordpress.org/support/plugin/pressr/reviews/#new-post">' . __( 'Write a Review', 'pressr' ) . '&nbsp;⭐️⭐️⭐️⭐️⭐️</a>' ) );
+	}       
 
-        $links = array_merge( $links, array( '<a href="https://wordpress.org/support/plugin/pressr/reviews/#new-post">' . __( 'Write a Review', 'pressr' ) . '&nbsp;⭐️⭐️⭐️⭐️⭐️</a>' ) );
-    }       
-
-    return $links;
+	return $links;
 }
 
-add_filter( 'plugin_row_meta', 'pressr_set_plugin_meta', 10, 2 );
+add_filter( 'plugin_row_meta', 'pressr_add_plugin_meta', 10, 2 );
 
+/**
+ * Add links to plugin actions
+ *
+ * Add useful links to the plugin actions
+ *
+ * @param  string $links Current links.
+ * @param  string $file  File in use.
+ *
+ * @return string        Links, now with settings added.
+ */
+function pressr_add_plugin_action( $links, $file ) {
+
+	static $this_plugin;
+
+	if ( ! $this_plugin ) {
+		$this_plugin = plugin_basename( __FILE__ );
+	}
+
+	if ( strpos( $file, 'pressr.php' ) !== false ) {
+
+		// Add link to settings page.
+		array_push( $links, '<a href="admin.php?page=pressr-settings">' . __( 'Settings', 'pressr' ) . '</a>' );
+	}
+
+	return $links;
+}
+
+add_filter( 'plugin_action_links', 'pressr_add_plugin_actions', 10, 2 );
+
+/**
+ * Compress codde
+ *
+ * Description to go here 
+ */
 function pressr_press_code() {
 
-    // Removes Jetpack CSS. Only use if no CSS components of Jetpack required
+	// Removes Jetpack CSS. Only use if no CSS components of Jetpack required.
+	add_filter( 'jetpack_implode_frontend_css', '__return_false', 99 );
 
-    add_filter( 'jetpack_implode_frontend_css', '__return_false', 99 );
+	/**
+	 * Remove JS for embedding other WP posts
+	 */
+	function pressr_deregister_wp_embed() {
 
-    // Remove JS for embedding other WP posts
+		wp_deregister_script( 'wp-embed' );
+	}
 
-    function deregister_wp_embed() {
+	add_action( 'wp_footer', 'pressr_deregister_wp_embed' );
 
-        wp_deregister_script( 'wp-embed' );
-    }
+	/**
+	 * Remove superfluous Gutenberg scripts
+	 */
+	function pressr_deregister_gutenberg_styles() {
 
-    add_action( 'wp_footer', 'deregister_wp_embed' );
+		if ( ! function_exists( 'gutenberg_register_scripts_and_styles' ) ) {
 
-    // Remove superfluous Gutenberg scripts
+			wp_dequeue_style( 'wp-block-library' );
+			wp_dequeue_style( 'wp-block-library-theme' );
+		}
+	}
 
-    function deregister_gutenberg_styles() {
+	add_action( 'wp_print_styles', 'pressr_deregister_gutenberg_styles', 100 );
 
-        if ( !function_exists( 'gutenberg_register_scripts_and_styles' ) ) {
+	/**
+	 * If just one post in result just show it - this removes a redundant page load from the search process
+	 */
+	function pressr_remove_single_results() {
 
-            wp_dequeue_style('wp-block-library');
-            wp_dequeue_style('wp-block-library-theme');
-        }
-    }
+		if ( is_search() ) {
 
-    add_action( 'wp_print_styles', 'deregister_gutenberg_styles', 100 );
+			global $wp_query;
 
-    // If just one post in result just show it - this removes a redundant page load from the search process
+			if ( 1 === $wp_query->post_count && 1 === $wp_query->max_num_pages ) {
+				wp_safe_redirect( get_permalink( $wp_query->posts[0]->ID ) );
+				exit;
+			}
+		}
+	}
 
-    function pressr_remove_single_results() {
+	add_action( 'template_redirect', 'pressr_remove_single_results' );
 
-    	if ( is_search() ) {
+	// Remove core Emoji support.
 
-    		global $wp_query;
+	remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+	remove_action( 'wp_print_styles', 'print_emoji_styles' );
+	remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
+	remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
+	remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
 
-    		if ( 1 === $wp_query->post_count && 1 === $wp_query->max_num_pages ) {
-    			wp_safe_redirect( get_permalink( $wp_query->posts[ 0 ]->ID ) );
-    			exit;
-    		}
-    	}
-    }
+	add_filter( 'emoji_svg_url', '__return_false' );
 
-    add_action( 'template_redirect', 'pressr_remove_single_results' );
+	// Remove Windows Live Writer support.
+	remove_action( 'wp_head', 'wlwmanifest_link' );
 
-    // Remove core Emoji support.
+	// Remove WordPress generator meta tag.
+	remove_action( 'wp_head', 'wp_generator' );
 
-    remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
-    remove_action( 'wp_print_styles', 'print_emoji_styles' );
-    remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
-    remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
-    remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
-    add_filter( 'emoji_svg_url', '__return_false' );
+	// Remove weblog client link.
+	remove_action( 'wp_head', 'rsd_link' );
 
-    // Remove Windows Live Writer support
+	// Remove shortlink.
+	remove_action( 'wp_head', 'wp_shortlink_wp_head', 10, 0 );
+	remove_action( 'template_redirect', 'wp_shortlink_header', 11 );
 
-    remove_action( 'wp_head', 'wlwmanifest_link' );
+	// Remove post relationship links.
+	remove_action( 'wp_head', 'index_rel_link' );
+	remove_action( 'wp_head', 'start_post_rel_link', 10, 0 );
+	remove_action( 'wp_head', 'parent_post_rel_link', 10, 0 ); 
+	remove_action( 'wp_head', 'adjacent_posts_rel_link', 10, 0 );
+	remove_action( 'wp_head', 'adjacent_posts_rel_link_wp_head', 10, 0 );
 
-    // Remove WordPress generator meta tag
+	/**
+	 * Remove HTML comments
+	 *
+	 * @param string $buffer Content.
+	 */
+	function pressr_callback( $buffer ) {
 
-    remove_action( 'wp_head', 'wp_generator' );
+		// Remove all HTML comments.
+		$buffer = preg_replace( '/<!--(.*)-->/Uis', '', $buffer );
 
-    // Remove weblog client link
+		// Remove double spaces until there are none left (looping round removes instances of more than 2 spaces in a row).
+		$count = 1;
+		while ( $count >= 1 ) {
+			$buffer = str_replace( '  ', ' ', $buffer, $count );
+		}
 
-    remove_action( 'wp_head', 'rsd_link' );
+		// Remove spaces between HTML tags.
+		$buffer = preg_replace( '/(\>)\s*(\<)/m', '$1$2', $buffer );           
 
-    // Remove shortlink
+		// Remove carriage returns.
+		$buffer = str_replace( "\r", '', $buffer );
 
-    remove_action( 'wp_head', 'wp_shortlink_wp_head', 10, 0 );
-    remove_action( 'template_redirect', 'wp_shortlink_header', 11 );
+		// Remove newlines.
+		$buffer = str_replace( "\n", '', $buffer );   
 
-    // Remove post relationship links
+		// Remove tabs.
+		$buffer = str_replace( "\t", '', $buffer );         
 
-    remove_action( 'wp_head', 'index_rel_link' );
-    remove_action( 'wp_head', 'start_post_rel_link', 10, 0 );
-    remove_action( 'wp_head', 'parent_post_rel_link', 10, 0 ); 
-    remove_action( 'wp_head', 'adjacent_posts_rel_link', 10, 0 );
-    remove_action( 'wp_head', 'adjacent_posts_rel_link_wp_head', 10, 0 );
+		return $buffer;
+	}
 
-    // Remove HTML comments
+	/**
+	 * Buffer start
+	 */
+	function pressr_buffer_start() {
+		ob_start( 'pressr_callback' );
+	}
+	add_action( 'get_header', 'pressr_buffer_start' );
 
-    function callback( $buffer ) {
+	/**
+	 * Buffer End
+	 */
+	function press_buffer_end() {
+		ob_end_flush();
+	}
+	add_action( 'wp_footer', 'pressr_buffer_end' );
 
-    	// Remove all HTML comments
-        $buffer = preg_replace( '/<!--(.*)-->/Uis', '', $buffer );
+	// Remove the admin bar.
+	add_filter( 'show_admin_bar', '__return_false' );
 
-        //return $buffer;
+	/**
+	 * Remove Apple Touch Icon
+	 *
+	 * @param string $string Meta tags.
+	 */
+	function pressr_remove_apple_touch_icon( $string ) {
 
-        // Remove carriage returns, new lines and tabs
-        $buffer = str_replace( "\r", '', $buffer );
-        $buffer = str_replace( "\n", '', $buffer );   
-        $buffer = str_replace( "\t", '', $buffer );   
+		return strpos( $string, 'apple-touch-icon' ) === false;
+	}
 
-    	// Remove spaces between HTML tags    
-        $buffer = preg_replace( '/(\>)\s*(\<)/m', '$1$2', $buffer );
+	/**
+	 * Filter out the Apple Touch icon
+	 *
+	 * @param string $meta_tags Meta tags.
+	 */
+	function pressr_apple_touch_icon( $meta_tags ) {
 
-        // Remove double spaces until there are none left (looping round removes instances of more than 2 spaces in a row)
-        $count = 1;
-        while ( $count >= 1 ) {
-        	$buffer = str_replace( '  ', ' ', $buffer, $count );
-        }    
+		return array_filter( $meta_tags, 'pressr_remove_apple_touch_icon' );
+	}
 
-        return $buffer;
-    }
+	add_filter( 'site_icon_meta_tags', 'pressr_apple_touch_icon' );
 
-    function buffer_start() {
-        ob_start( "callback" );
-    }
+	/**
+	 * Remove Windows 10 Icon
+	 *
+	 * @param string $string Meta tags.
+	 */
+	function pressr_remove_ms_icon( $string ) {
 
-    function buffer_end() {
-        ob_end_flush();
-    }
+		return strpos( $string, 'msapplication-TileImage' ) === false;
+	}
 
-    add_action( 'get_header', 'buffer_start' );
-    add_action( 'wp_footer', 'buffer_end' );
+	/**
+	 * Filter out the MS icon
+	 *
+	 * @param string $meta_tags Meta tags.
+	 */
+	function pressr_ms_icon( $meta_tags ) {
 
-    // Remove the admin bar
+		return array_filter( $meta_tags, 'pressr_remove_ms_icon' );
+	}
 
-    add_filter( 'show_admin_bar', '__return_false' );
+	add_filter( 'site_icon_meta_tags', 'pressr_ms_icon' );
 
-    // Remove Apple Touch Icon
+	// Remove the recent widgets styling.
+	add_filter( 'show_recent_comments_widget_style', '__return_false' );
 
-    function removeAppleTouchIconFilter( $string ) {
+	// Remove REST API.
+	remove_action( 'wp_head', 'rest_output_link_wp_head' );
 
-        return strpos( $string, 'apple-touch-icon' ) === false;
-    }
+	// Clean up attributes in style tags.
+	add_filter( 'style_loader_tag', function( string $tag, string $handle ): string {
 
-    function prevent_apple_touch_icon_metatag( $meta_tags ) {
+		// Remove ID attribute.
+		$tag = str_replace( "id='${handle}-css'", '', $tag );
 
-        return array_filter( $meta_tags, 'removeAppleTouchIconFilter' );
-    }
+		// Remove type attribute.
+		$tag = str_replace( " type='text/css'", '', $tag );
 
-    add_filter( 'site_icon_meta_tags','prevent_apple_touch_icon_metatag' );
+		// Remove trailing slash.
+		$tag = str_replace( ' />', '>', $tag );
 
-    // Remove Windows 10 Icon
+		// Remove double spaces.
+		return str_replace( '  ', '', $tag );
 
-    function removeMSIconFilter( $string ) {
-
-        return strpos( $string, 'msapplication-TileImage' ) === false;
-    }
-
-    function prevent_ms_icon_metatag( $meta_tags ) {
-
-        return array_filter( $meta_tags, 'removeMSIconFilter' );
-    }
-
-    add_filter( 'site_icon_meta_tags', 'prevent_ms_icon_metatag' );
-
-    // Remove the recent widgets styling
-
-    add_filter( 'show_recent_comments_widget_style', '__return_false' );
-
-    // Remove REST API
-     
-    remove_action( 'wp_head', 'rest_output_link_wp_head' );
-
-    // Clean up attributes in style tags
-
-    add_filter( 'style_loader_tag', function ( string $tag, string $handle ): string {
-
-        // Remove ID attribute
-        $tag = str_replace( "id='${handle}-css'", '', $tag );
-
-        // Remove type attribute
-        $tag = str_replace( " type='text/css'", '', $tag );
-
-        // Remove trailing slash
-        $tag = str_replace( ' />', '>', $tag );
-
-        // Remove double spaces
-        return str_replace( '  ', '', $tag );
-
-    }, 10, 2 );
+	}, 10, 2 );
 
 }
 

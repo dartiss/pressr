@@ -74,7 +74,7 @@ add_filter( 'plugin_row_meta', 'pressr_add_plugin_meta', 10, 2 );
  *
  * @return string        Links, now with settings added.
  */
-function pressr_add_plugin_action( $links, $file ) {
+function pressr_add_plugin_actions( $links, $file ) {
 
 	static $this_plugin;
 
@@ -92,6 +92,28 @@ function pressr_add_plugin_action( $links, $file ) {
 }
 
 add_filter( 'plugin_action_links', 'pressr_add_plugin_actions', 10, 2 );
+
+/**
+ * Remove a tag from supplied HTML
+ *
+ * Pass in some HTML and something from a tag to uniquely identify it and this function will remove the entire tag
+ *
+ * @param  string $html  The HTML to be modified.
+ * @param  string $find  Unique content of tag to find.
+ *
+ * @return string        Modified HTML.
+ */
+function pressr_extract_html( $html, $find ) {
+
+	$pos = strpos( $html, $find );
+	if ( false !== $pos ) {
+		$tag_start = strrpos( substr( $html, 0, $pos ), '<' );
+		$tag_end   = strpos( substr( $html, $pos ), '>' ) + $pos;
+		$html      = str_replace( substr( $html, $tag_start, $tag_end - $tag_start + 1 ), '', $html );
+	}
+
+	return $html;
+}
 
 /**
  * Compress codde
@@ -191,17 +213,30 @@ function pressr_press_code() {
 			$buffer = str_replace( '  ', ' ', $buffer, $count );
 		}
 
+		// Remove profile tag.
+		$buffer = pressr_extract_html( $buffer, 'rel="profile"' );
+
+		// Remove no-js.
+		$buffer = str_replace( ' class="no-js"', '', $buffer );
+		$buffer = str_replace( " class='no-js'", '', $buffer );
+		$buffer = str_replace( "<script>document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );</script>\n", '', $buffer );
+
+		// Remove theme's print CSS.
+		$buffer = pressr_extract_html( $buffer, "media='print'" );
+
+		//return $buffer;
+
 		// Remove spaces between HTML tags.
-		$buffer = preg_replace( '/(\>)\s*(\<)/m', '$1$2', $buffer );           
+		$buffer = preg_replace( '/(\>)\s*(\<)/m', '$1$2', $buffer );
 
 		// Remove carriage returns.
 		$buffer = str_replace( "\r", '', $buffer );
 
 		// Remove newlines.
-		$buffer = str_replace( "\n", '', $buffer );   
+		$buffer = str_replace( "\n", '', $buffer );
 
 		// Remove tabs.
-		$buffer = str_replace( "\t", '', $buffer );         
+		$buffer = str_replace( "\t", '', $buffer );
 
 		return $buffer;
 	}
@@ -217,10 +252,11 @@ function pressr_press_code() {
 	/**
 	 * Buffer End
 	 */
-	function press_buffer_end() {
+	function pressr_buffer_end() {
 		ob_end_flush();
 	}
-	add_action( 'wp_footer', 'pressr_buffer_end' );
+	add_action( 'shutdown', 'pressr_buffer_end' );	
+	//add_action( 'wp_footer', 'pressr_buffer_end' );
 
 	// Remove the admin bar.
 	add_filter( 'show_admin_bar', '__return_false' );

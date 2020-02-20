@@ -20,8 +20,6 @@ Eventually, there will be an admin back-end to allow all of the following to be 
 
 All of the code has been reviewed to make sure it does what it should
 
-Kudos to WP Toolbelt (https://github.com/BinaryMoon/wp-toolbelt/blob/master/modules/cleanup/module.php) for some of the code
-
 To Do:
 
 - Continue to add compression code
@@ -92,28 +90,6 @@ function pressr_add_plugin_actions( $links, $file ) {
 }
 
 add_filter( 'plugin_action_links', 'pressr_add_plugin_actions', 10, 2 );
-
-/**
- * Remove a tag from supplied HTML
- *
- * Pass in some HTML and something from a tag to uniquely identify it and this function will remove the entire tag
- *
- * @param  string $html  The HTML to be modified.
- * @param  string $find  Unique content of tag to find.
- *
- * @return string        Modified HTML.
- */
-function pressr_extract_html( $html, $find ) {
-
-	$pos = strpos( $html, $find );
-	if ( false !== $pos ) {
-		$tag_start = strrpos( substr( $html, 0, $pos ), '<' );
-		$tag_end   = strpos( substr( $html, $pos ), '>' ) + $pos;
-		$html      = str_replace( substr( $html, $tag_start, $tag_end - $tag_start + 1 ), '', $html );
-	}
-
-	return $html;
-}
 
 /**
  * Compress codde
@@ -214,7 +190,7 @@ function pressr_press_code() {
 		}
 
 		// Remove profile tag.
-		$buffer = pressr_extract_html( $buffer, 'rel="profile"' );
+		$buffer = pressr_remove_html( $buffer, 'rel="profile"' );
 
 		// Remove no-js.
 		$buffer = str_replace( ' class="no-js"', '', $buffer );
@@ -222,7 +198,13 @@ function pressr_press_code() {
 		$buffer = str_replace( "<script>document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );</script>\n", '', $buffer );
 
 		// Remove theme's print CSS.
-		$buffer = pressr_extract_html( $buffer, "media='print'" );
+		$buffer = pressr_remove_html( $buffer, "media='print'" );
+
+		// Remove Pingback meta.
+		$buffer = pressr_remove_html( $buffer, 'rel="pingback"' );
+
+		// Remove DNS pre-fetches.
+		$buffer = pressr_remove_html( $buffer, "rel='dns-prefetch'" );
 
 		//return $buffer;
 
@@ -331,3 +313,39 @@ function pressr_press_code() {
 }
 
 add_filter( 'plugins_loaded', 'pressr_press_code' );
+
+// Remove main feed from meta.
+add_filter( 'feed_links_show_posts_feed', '__return_false' );
+
+// Remove commments feed from meta.
+add_filter( 'feed_links_show_comments_feed', '__return_false' );
+
+// Switch off meta for other feeds.
+remove_action( 'wp_head', 'feed_links_extra', 3 );
+
+/**
+ * Remove a tag from supplied HTML
+ *
+ * Pass in some HTML and something from a tag to uniquely identify it and this function will remove the entire tag
+ *
+ * @param  string $html  The HTML to be modified.
+ * @param  string $find  Unique content of tag to find.
+ *
+ * @return string        Modified HTML.
+ */
+function pressr_remove_html( $html, $find ) {
+
+	$found = true;
+	while ( $found ) {
+		$pos = strpos( $html, $find );
+		if ( false !== $pos ) {
+			$tag_start = strrpos( substr( $html, 0, $pos ), '<' );
+			$tag_end   = strpos( substr( $html, $pos ), '>' ) + $pos;
+			$html      = str_replace( substr( $html, $tag_start, $tag_end - $tag_start + 1 ), '', $html );
+		} else {
+			$found = false;
+		}
+	}
+
+	return $html;
+}

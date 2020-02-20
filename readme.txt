@@ -32,6 +32,14 @@ Key features include...
 
 Please visit the [Github page](https://github.com/dartiss/pressr "Github") for the latest code development, planned enhancements and known issues.
 
+== Acknowledgements ==
+
+The biggest thanks has to go to Jack Lenox, not only for the Susty theme but his superb talks on creating a sustainable web. [Check out a video of his talk here](https://wordpress.tv/2019/08/27/jack-lenox-how-better-performing-websites-can-help-save-the-planet-2/).
+
+Kudos to [WP Toolbelt](https://github.com/BinaryMoon/wp-toolbelt/blob/master/modules/cleanup/module.php) for some of the code ideas.
+
+Lastly, thanks to [Tsohost](https://www.tsohost.com/) for suggesting the name Pressr. I really am bad at thinking up snappy names myself.
+
 == Installation ==
 
 Pressr can be found and installed via the Plugin menu within WordPress administration (Plugins -> Add New).

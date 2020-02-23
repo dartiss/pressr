@@ -39,15 +39,21 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/admin.php';
  */
 function pressr_press_code() {
 
+	pressr_get_options();
+
 	// Removes Jetpack CSS. Only use if no CSS components of Jetpack required.
-	add_filter( 'jetpack_implode_frontend_css', '__return_false', 99 );
+	if ( true === PRESSR_OPTION['jetpack_css'] ) {
+		add_filter( 'jetpack_implode_frontend_css', '__return_false', 99 );
+	}
 
 	/**
 	 * Remove JS for embedding other WP posts
 	 */
 	function pressr_deregister_wp_embed() {
 
-		wp_deregister_script( 'wp-embed' );
+		if ( true === PRESSR_OPTION['wp_embed'] ) {
+			wp_deregister_script( 'wp-embed' );
+		}
 	}
 
 	add_action( 'wp_footer', 'pressr_deregister_wp_embed' );
@@ -57,7 +63,7 @@ function pressr_press_code() {
 	 */
 	function pressr_deregister_gutenberg_styles() {
 
-		if ( ! function_exists( 'gutenberg_register_scripts_and_styles' ) ) {
+		if ( ! function_exists( 'gutenberg_register_scripts_and_styles' ) && true === PRESSR_OPTION['gutenberg_css'] ) {
 
 			wp_dequeue_style( 'wp-block-library' );
 			wp_dequeue_style( 'wp-block-library-theme' );
@@ -71,7 +77,7 @@ function pressr_press_code() {
 	 */
 	function pressr_remove_single_results() {
 
-		if ( is_search() ) {
+		if ( is_search() && true === PRESSR_OPTION['single_search'] ) {
 
 			global $wp_query;
 
@@ -86,33 +92,45 @@ function pressr_press_code() {
 
 	// Remove core Emoji support.
 
-	remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
-	remove_action( 'wp_print_styles', 'print_emoji_styles' );
-	remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
-	remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
-	remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
+	if ( true === PRESSR_OPTION['emoji'] ) {
+		remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+		remove_action( 'wp_print_styles', 'print_emoji_styles' );
+		remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
+		remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
+		remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
 
-	add_filter( 'emoji_svg_url', '__return_false' );
+		add_filter( 'emoji_svg_url', '__return_false' );
+	}
 
 	// Remove Windows Live Writer support.
-	remove_action( 'wp_head', 'wlwmanifest_link' );
+	if ( true === PRESSR_OPTION['live_writer'] ) {
+		remove_action( 'wp_head', 'wlwmanifest_link' );
+	}
 
 	// Remove WordPress generator meta tag.
-	remove_action( 'wp_head', 'wp_generator' );
+	if ( true === PRESSR_OPTION['generator'] ) { 
+		remove_action( 'wp_head', 'wp_generator' );
+	}
 
-	// Remove weblog client link.
-	remove_action( 'wp_head', 'rsd_link' );
+	// Remove XML-RPC link.
+	if ( true === PRESSR_OPTION['xmlrpc'] ) {
+		remove_action( 'wp_head', 'rsd_link' );
+	}
 
 	// Remove shortlink.
-	remove_action( 'wp_head', 'wp_shortlink_wp_head', 10, 0 );
-	remove_action( 'template_redirect', 'wp_shortlink_header', 11 );
+	if ( true === PRESSR_OPTION['shortlink'] ) {
+		remove_action( 'wp_head', 'wp_shortlink_wp_head', 10, 0 );
+		remove_action( 'template_redirect', 'wp_shortlink_header', 11 );
+	}
 
 	// Remove post relationship links.
-	remove_action( 'wp_head', 'index_rel_link' );
-	remove_action( 'wp_head', 'start_post_rel_link', 10, 0 );
-	remove_action( 'wp_head', 'parent_post_rel_link', 10, 0 ); 
-	remove_action( 'wp_head', 'adjacent_posts_rel_link', 10, 0 );
-	remove_action( 'wp_head', 'adjacent_posts_rel_link_wp_head', 10, 0 );
+	if ( true === PRESSR_OPTION['relationship'] ) {
+		remove_action( 'wp_head', 'index_rel_link' );
+		remove_action( 'wp_head', 'start_post_rel_link', 10, 0 );
+		remove_action( 'wp_head', 'parent_post_rel_link', 10, 0 ); 
+		remove_action( 'wp_head', 'adjacent_posts_rel_link', 10, 0 );
+		remove_action( 'wp_head', 'adjacent_posts_rel_link_wp_head', 10, 0 );
+	}
 
 	/**
 	 * Remove HTML comments
@@ -122,44 +140,59 @@ function pressr_press_code() {
 	function pressr_callback( $buffer ) {
 
 		// Remove all HTML comments.
-		$buffer = preg_replace( '/<!--(.*)-->/Uis', '', $buffer );
+		if ( true === PRESSR_OPTION['html_comments'] ) {
+			$buffer = preg_replace( '/<!--(.*)-->/Uis', '', $buffer );
+		}
 
 		// Remove double spaces until there are none left (looping round removes instances of more than 2 spaces in a row).
-		$count = 1;
-		while ( $count >= 1 ) {
-			$buffer = str_replace( '  ', ' ', $buffer, $count );
+		if ( true === PRESSR_OPTION['double_spaces'] ) {
+			$count = 1;
+			while ( $count >= 1 ) {
+				$buffer = str_replace( '  ', ' ', $buffer, $count );
+			}
 		}
 
 		// Remove profile tag.
-		$buffer = pressr_remove_html( $buffer, 'rel="profile"' );
+		if ( true === PRESSR_OPTION['profile_tag'] ) {
+			$buffer = pressr_remove_html( $buffer, 'rel="profile"' );
+		}
 
 		// Remove no-js.
-		$buffer = str_replace( ' class="no-js"', '', $buffer );
-		$buffer = str_replace( " class='no-js'", '', $buffer );
-		$buffer = str_replace( "<script>document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );</script>\n", '', $buffer );
+		if ( true === PRESSR_OPTION['no_js'] ) {
+			$buffer = str_replace( ' class="no-js"', '', $buffer );
+			$buffer = str_replace( " class='no-js'", '', $buffer );
+			$buffer = str_replace( "<script>document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );</script>\n", '', $buffer );
+		}
 
 		// Remove theme's print CSS.
-		$buffer = pressr_remove_html( $buffer, "media='print'" );
+		if ( true === PRESSR_OPTION['print_css'] ) {
+			$buffer = pressr_remove_html( $buffer, "media='print'" );
+		}
 
 		// Remove Pingback meta.
-		$buffer = pressr_remove_html( $buffer, 'rel="pingback"' );
+		if ( true === PRESSR_OPTION['pingback'] ) {
+			$buffer = pressr_remove_html( $buffer, 'rel="pingback"' );
+		}
 
 		// Remove DNS pre-fetches.
-		$buffer = pressr_remove_html( $buffer, "rel='dns-prefetch'" );
+		if ( true === PRESSR_OPTION['dns_prefetch'] ) {
+			$buffer = pressr_remove_html( $buffer, "rel='dns-prefetch'" );
+		}
 
-		//return $buffer;
+		if ( true === PRESSR_OPTION['tidy_html'] ) {
 
-		// Remove spaces between HTML tags.
-		$buffer = preg_replace( '/(\>)\s*(\<)/m', '$1$2', $buffer );
+			// Remove spaces between HTML tags.
+			$buffer = preg_replace( '/(\>)\s*(\<)/m', '$1$2', $buffer );
 
-		// Remove carriage returns.
-		$buffer = str_replace( "\r", '', $buffer );
+			// Remove carriage returns.
+			$buffer = str_replace( "\r", '', $buffer );
 
-		// Remove newlines.
-		$buffer = str_replace( "\n", '', $buffer );
+			// Remove newlines.
+			$buffer = str_replace( "\n", '', $buffer );
 
-		// Remove tabs.
-		$buffer = str_replace( "\t", '', $buffer );
+			// Remove tabs.
+			$buffer = str_replace( "\t", '', $buffer );
+		}
 
 		return $buffer;
 	}
@@ -181,7 +214,9 @@ function pressr_press_code() {
 	add_action( 'shutdown', 'pressr_buffer_end' );
 
 	// Remove the admin bar.
-	add_filter( 'show_admin_bar', '__return_false' );
+	if ( true === PRESSR_OPTION['admin_bar'] ) {
+		add_filter( 'show_admin_bar', '__return_false' );
+	}
 
 	/**
 	 * Remove Apple Touch Icon
@@ -203,7 +238,9 @@ function pressr_press_code() {
 		return array_filter( $meta_tags, 'pressr_remove_apple_touch_icon' );
 	}
 
-	add_filter( 'site_icon_meta_tags', 'pressr_apple_touch_icon' );
+	if ( true === PRESSR_OPTION['apple_icon'] ) {
+		add_filter( 'site_icon_meta_tags', 'pressr_apple_touch_icon' );
+	}
 
 	/**
 	 * Remove Windows 10 Icon
@@ -224,44 +261,99 @@ function pressr_press_code() {
 
 		return array_filter( $meta_tags, 'pressr_remove_ms_icon' );
 	}
-
-	add_filter( 'site_icon_meta_tags', 'pressr_ms_icon' );
+	if ( true === PRESSR_OPTION['ms_icon'] ) {
+		add_filter( 'site_icon_meta_tags', 'pressr_ms_icon' );
+	}
 
 	// Remove the recent widgets styling.
-	add_filter( 'show_recent_comments_widget_style', '__return_false' );
+	if ( true === PRESSR_OPTION['widget_style'] ) {
+		add_filter( 'show_recent_comments_widget_style', '__return_false' );
+	}
 
 	// Remove REST API.
-	remove_action( 'wp_head', 'rest_output_link_wp_head' );
+	if ( true === PRESSR_OPTION['rest_api'] ) {
+		remove_action( 'wp_head', 'rest_output_link_wp_head' );
+	}
 
 	// Clean up attributes in style tags.
 	add_filter( 'style_loader_tag', function( string $tag, string $handle ): string {
 
-		// Remove ID attribute.
-		$tag = str_replace( "id='${handle}-css'", '', $tag );
+		if ( true === PRESSR_OPTION['clean_attributes'] ) {
 
-		// Remove type attribute.
-		$tag = str_replace( " type='text/css'", '', $tag );
+			// Remove ID attribute.
+			$tag = str_replace( "id='${handle}-css'", '', $tag );
 
-		// Remove trailing slash.
-		$tag = str_replace( ' />', '>', $tag );
+			// Remove type attribute.
+			$tag = str_replace( " type='text/css'", '', $tag );
 
-		// Remove double spaces.
-		return str_replace( '  ', '', $tag );
+			// Remove trailing slash.
+			$tag = str_replace( ' />', '>', $tag );
+			
+			// Remove double spaces.
+			$tag = str_replace( '  ', '', $tag );
+		}
+
+		return $tag;
 
 	}, 10, 2 );
+
+	// Remove main feed from meta.
+	if ( true === PRESSR_OPTION['feed'] ) {
+		add_filter( 'feed_links_show_posts_feed', '__return_false' );
+	}
+
+	// Remove commments feed from meta.
+	if ( true === PRESSR_OPTION['comments_feed'] ) {
+		add_filter( 'feed_links_show_comments_feed', '__return_false' );
+	}
+
+	// Switch off meta for other feeds.
+	if ( true === PRESSR_OPTION['other_feeds'] ) {
+		remove_action( 'wp_head', 'feed_links_extra', 3 );
+	}
 
 }
 
 add_filter( 'plugins_loaded', 'pressr_press_code' );
 
-// Remove main feed from meta.
-add_filter( 'feed_links_show_posts_feed', '__return_false' );
+/**
+ * Get the Pressr settings
+ *
+ * For now, the settings are hard-coded, but will eventually be fetched from saved admin options.
+ * Settings are saved into a global array so they don't force (potentially) an SQL read everytime they're needed
+ */
+function pressr_get_options() {
 
-// Remove commments feed from meta.
-add_filter( 'feed_links_show_comments_feed', '__return_false' );
-
-// Switch off meta for other feeds.
-remove_action( 'wp_head', 'feed_links_extra', 3 );
+	define( 'PRESSR_OPTION', array(
+		'admin_bar'        => true,
+		'apple_icon'       => false,
+		'clean_attributes' => true,
+		'comments_feed'    => true,
+		'dns_prefetch'     => false,
+		'double_spaces'    => true,
+		'emoji'            => false,
+		'feed'             => false,
+		'generator'        => true,
+		'gutenberg_css'    => false,
+		'html_comments'    => true,
+		'jetpack_css'      => false,
+		'ms_icon'          => true,
+		'no_js'            => false,
+		'other_feeds'      => true,
+		'live_writer'      => true,
+		'pingback'         => true,
+		'print_css'        => true,
+		'profile_tag'      => true,
+		'relationship'     => true,
+		'rest_api'         => false,
+		'shortlink'        => true,
+		'single_search'    => true,
+		'tidy_html'        => true,
+		'widget_style'     => true,
+		'wp_embed'         => false,
+		'xmlrpc'           => false,
+	) );
+}
 
 /**
  * Remove a tag from supplied HTML

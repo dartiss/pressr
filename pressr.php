@@ -312,6 +312,19 @@ function pressr_press_code() {
 		remove_action( 'wp_head', 'feed_links_extra', 3 );
 	}
 
+	// Switch off canonical meta.
+	if ( true === PRESSR_OPTION['canonical'] ) {
+		remove_action( 'wp_head', 'rel_canonical' );
+	}
+
+	// Switch off oEmbed discovery.
+	if ( true === PRESSR_OPTION['oembed'] ) {
+		remove_action( 'wp_head', 'wp_oembed_add_discovery_links', 10 );
+		remove_action( 'wp_head', 'wp_oembed_add_host_js' );
+		remove_action( 'rest_api_init', 'wp_oembed_register_route' );
+		remove_filter( 'oembed_dataparse', 'wp_filter_oembed_result', 10 );
+	}
+
 }
 
 add_filter( 'plugins_loaded', 'pressr_press_code' );
@@ -324,9 +337,12 @@ add_filter( 'plugins_loaded', 'pressr_press_code' );
  */
 function pressr_get_options() {
 
+	// These are the settings for my own, production site.
+	/**
 	define( 'PRESSR_OPTION', array(
 		'admin_bar'        => true,
 		'apple_icon'       => false,
+		'canonical'        => true,
 		'clean_attributes' => true,
 		'comments_feed'    => true,
 		'dns_prefetch'     => false,
@@ -341,6 +357,7 @@ function pressr_get_options() {
 		'no_js'            => false,
 		'other_feeds'      => true,
 		'live_writer'      => true,
+		'oembed'           => false,
 		'pingback'         => true,
 		'print_css'        => true,
 		'profile_tag'      => true,
@@ -348,10 +365,44 @@ function pressr_get_options() {
 		'rest_api'         => false,
 		'shortlink'        => true,
 		'single_search'    => true,
-		'tidy_html'        => true,
+		'tidy_html'        => false,
 		'widget_style'     => true,
 		'wp_embed'         => false,
 		'xmlrpc'           => false,
+	) );
+	**/
+
+	// This will switch all options on, for testing purposes.
+	define( 'PRESSR_OPTION', array(
+		'admin_bar'        => true,
+		'apple_icon'       => true,
+		'canonical'        => true,
+		'clean_attributes' => true,
+		'comments_feed'    => true,
+		'dns_prefetch'     => true,
+		'double_spaces'    => true,
+		'emoji'            => true,
+		'feed'             => true,
+		'generator'        => true,
+		'gutenberg_css'    => true,
+		'html_comments'    => true,
+		'jetpack_css'      => true,
+		'ms_icon'          => true,
+		'no_js'            => true,
+		'oembed'           => true,
+		'other_feeds'      => true,
+		'live_writer'      => true,
+		'pingback'         => true,
+		'print_css'        => true,
+		'profile_tag'      => true,
+		'relationship'     => true,
+		'rest_api'         => true,
+		'shortlink'        => true,
+		'single_search'    => true,
+		'tidy_html'        => false,
+		'widget_style'     => true,
+		'wp_embed'         => true,
+		'xmlrpc'           => true,
 	) );
 }
 

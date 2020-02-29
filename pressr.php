@@ -133,6 +133,25 @@ function pressr_press_code() {
 	}
 
 	/**
+	 * Remove JQuery Migrate
+	 *
+	 * @param string $scripts JQuery scripts.
+	 */
+	function remove_jquery_migrate( $scripts ) {
+		if ( true === PRESSR_OPTION['jquery_migrate'] ) {
+
+			if ( ! is_admin() && isset( $scripts->registered['jquery'] ) ) {
+				$script = $scripts->registered['jquery'];
+				
+				if ( $script->deps ) {
+					$script->deps = array_diff( $script->deps, array( 'jquery-migrate' ) );
+				}
+			}
+		}
+	}
+	add_action( 'wp_default_scripts', 'remove_jquery_migrate' );
+
+	/**
 	 * Remove HTML comments
 	 *
 	 * @param string $buffer Content.
@@ -177,6 +196,11 @@ function pressr_press_code() {
 		// Remove DNS pre-fetches.
 		if ( true === PRESSR_OPTION['dns_prefetch'] ) {
 			$buffer = pressr_remove_html( $buffer, "rel='dns-prefetch'" );
+		}
+
+		// Remove pre-connects.
+		if ( true === PRESSR_OPTION['preconnect'] ) {
+			$buffer = pressr_remove_html( $buffer, "rel='preconnect'" );
 		}
 
 		if ( true === PRESSR_OPTION['tidy_html'] ) {
@@ -325,6 +349,17 @@ function pressr_press_code() {
 		remove_filter( 'oembed_dataparse', 'wp_filter_oembed_result', 10 );
 	}
 
+	/**
+	 * Switch off Genericons (used by Jetpack).
+	 */
+	function dequeue_my_css() {
+		if ( true === PRESSR_OPTION['genericons'] ) {
+			wp_dequeue_style( 'genericons' );
+			wp_deregister_style( 'genericons' );
+		}
+	}
+	add_action( 'wp_enqueue_scripts', 'dequeue_my_css', 100 );
+
 }
 
 add_filter( 'plugins_loaded', 'pressr_press_code' );
@@ -350,15 +385,18 @@ function pressr_get_options() {
 		'emoji'            => false,
 		'feed'             => false,
 		'generator'        => true,
+		'genericons'       => false,
 		'gutenberg_css'    => false,
 		'html_comments'    => true,
 		'jetpack_css'      => false,
+		'jquery_migrate'   => true,
 		'ms_icon'          => true,
 		'no_js'            => false,
 		'other_feeds'      => true,
 		'live_writer'      => true,
 		'oembed'           => false,
 		'pingback'         => true,
+		'preconnect'       => true,
 		'print_css'        => true,
 		'profile_tag'      => true,
 		'relationship'     => true,
@@ -384,15 +422,18 @@ function pressr_get_options() {
 		'emoji'            => true,
 		'feed'             => true,
 		'generator'        => true,
+		'genericons'       => true,
 		'gutenberg_css'    => true,
 		'html_comments'    => true,
 		'jetpack_css'      => true,
+		'jquery_migrate'   => true,
 		'ms_icon'          => true,
 		'no_js'            => true,
 		'oembed'           => true,
 		'other_feeds'      => true,
 		'live_writer'      => true,
 		'pingback'         => true,
+		'preconnect'       => true,
 		'print_css'        => true,
 		'profile_tag'      => true,
 		'relationship'     => true,

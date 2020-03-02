@@ -67,3 +67,44 @@ function pressr_add_plugin_actions( $links, $file ) {
 }
 
 add_filter( 'plugin_action_links', 'pressr_add_plugin_actions', 10, 2 );
+
+/**
+ * Add links to plugin actions
+ *
+ * Add useful links to the plugin actions
+ */
+function pressr_admin_enqueue_scripts() {
+	wp_enqueue_style( 'wp-pointer' );
+	wp_enqueue_script( 'wp-pointer' );
+	add_action( 'admin_print_footer_scripts', 'pressr_admin_print_footer_scripts' );
+}
+
+add_action( 'admin_enqueue_scripts', 'pressr_admin_enqueue_scripts' );
+
+/**
+ * Add links to plugin actions
+ *
+ * Add useful links to the plugin actions
+ */
+function pressr_admin_print_footer_scripts() {
+	$pointer_content  = __( '<h3>Pressr</h3>', 'pressr' );
+	$pointer_content .= __( '<p>Before Pressr will do anything you need to head to the settings and switch on the functions that you require.</p>', 'pressr' );
+	$allowed_html     = array(
+		'h3' => array(),
+		'p'  => array(),
+	);
+	?>
+	<script type="text/javascript">
+	//<![CDATA[
+	jQuery(document).ready( function($) {
+	$('#menu-settings').pointer({
+		content: '<?php echo wp_kses( $pointer_content, $allowed_html ); ?>',
+		position: 'left',
+		close: function() {
+	}
+		}).pointer('open');
+	});
+	//]]>
+	</script>
+	<?php
+}

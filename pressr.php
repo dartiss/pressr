@@ -180,7 +180,8 @@ function pressr_press_code() {
 		if ( true === PRESSR_OPTION['no_js'] ) {
 			$buffer = str_replace( ' class="no-js"', '', $buffer );
 			$buffer = str_replace( " class='no-js'", '', $buffer );
-			$buffer = str_replace( "<script>document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );</script>\n", '', $buffer );
+			$buffer = str_replace( "<script>document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );</script>", '', $buffer );
+			$buffer = str_replace( "<script>(function(html){html.className = html.className.replace(/\bno-js\b/,'js')})(document.documentElement);</script>", '', $buffer );
 		}
 
 		// Remove theme's print CSS.
@@ -349,6 +350,8 @@ function pressr_press_code() {
 		remove_filter( 'oembed_dataparse', 'wp_filter_oembed_result', 10 );
 	}
 
+	remove_filter( 'walker_nav_menu_start_el', 'twentytwenty_nav_menu_social_icons', 999 );
+
 	/**
 	 * Switch off Genericons (used by Jetpack).
 	 */
@@ -359,6 +362,16 @@ function pressr_press_code() {
 		}
 	}
 	add_action( 'wp_enqueue_scripts', 'dequeue_my_css', 100 );
+
+	/**
+	 * Switch off comments script (use if WP comments are not being used)
+	 */
+	function clean_header() {
+		if ( true === PRESSR_OPTION['comments'] ) {
+			wp_deregister_script( 'comment-reply' );
+		}
+	}
+	add_action( 'init', 'clean_header' );
 
 }
 
@@ -372,14 +385,16 @@ add_filter( 'plugins_loaded', 'pressr_press_code' );
  */
 function pressr_get_options() {
 
-	// These are the settings for my own, production site.
 	/**
+	// These are the settings for my own, production site.
+
 	define( 'PRESSR_OPTION', array(
 		'admin_bar'        => true,
 		'apple_icon'       => false,
 		'canonical'        => true,
 		'clean_attributes' => true,
 		'comments_feed'    => true,
+		'comments_script'  => false,
 		'dns_prefetch'     => false,
 		'double_spaces'    => true,
 		'emoji'            => false,
@@ -417,6 +432,7 @@ function pressr_get_options() {
 		'canonical'        => true,
 		'clean_attributes' => true,
 		'comments_feed'    => true,
+		'comments_script'  => true,
 		'dns_prefetch'     => true,
 		'double_spaces'    => true,
 		'emoji'            => true,

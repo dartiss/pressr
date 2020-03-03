@@ -69,30 +69,36 @@ function pressr_add_plugin_actions( $links, $file ) {
 add_filter( 'plugin_action_links', 'pressr_add_plugin_actions', 10, 2 );
 
 /**
- * Add links to plugin actions
+ * Set up feature points
  *
- * Add useful links to the plugin actions
+ * Queue up scripts and add the appropriate action
  */
 function pressr_admin_enqueue_scripts() {
+
 	wp_enqueue_style( 'wp-pointer' );
 	wp_enqueue_script( 'wp-pointer' );
+
 	add_action( 'admin_print_footer_scripts', 'pressr_admin_print_footer_scripts' );
 }
 
 add_action( 'admin_enqueue_scripts', 'pressr_admin_enqueue_scripts' );
 
 /**
- * Add links to plugin actions
+ * Display feature pointer
  *
- * Add useful links to the plugin actions
+ * This is the bit that displays the actual feature point content and where it points to
  */
 function pressr_admin_print_footer_scripts() {
-	$pointer_content  = __( '<h3>Pressr</h3>', 'pressr' );
+
+	$pointer_content  = __( '<h3>Welcome to Pressr</h3>', 'pressr' );
+	$pointer_content .= __( "<p>Pressr is here to reduce your site's footprint, making it more sustainable.</p>", 'pressr' );
 	$pointer_content .= __( '<p>Before Pressr will do anything you need to head to the settings and switch on the functions that you require.</p>', 'pressr' );
-	$allowed_html     = array(
+
+	$allowed_html = array(
 		'h3' => array(),
 		'p'  => array(),
 	);
+
 	?>
 	<script type="text/javascript">
 	//<![CDATA[

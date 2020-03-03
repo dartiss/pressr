@@ -249,7 +249,6 @@ function pressr_press_code() {
 	 * @param string $string Meta tags.
 	 */
 	function pressr_remove_apple_touch_icon( $string ) {
-
 		return strpos( $string, 'apple-touch-icon' ) === false;
 	}
 
@@ -456,7 +455,7 @@ function pressr_get_options() {
 		'rest_api'         => true,
 		'shortlink'        => true,
 		'single_search'    => true,
-		'tidy_html'        => false,
+		'tidy_html'        => true,
 		'widget_style'     => true,
 		'wp_embed'         => true,
 		'xmlrpc'           => true,

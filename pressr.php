@@ -26,11 +26,11 @@ To Do:
 	- Review various page outputs to see what can be removed
 - Admin back-end
 	- Tips
-	- Add feature pointer
 - Add compression options for WP Admin
  */
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/admin.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/settings.php';
 
 /**
  * Compress code

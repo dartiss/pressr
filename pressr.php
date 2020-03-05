@@ -348,29 +348,39 @@ function pressr_press_code() {
 		remove_action( 'rest_api_init', 'wp_oembed_register_route' );
 		remove_filter( 'oembed_dataparse', 'wp_filter_oembed_result', 10 );
 	}
-
 	remove_filter( 'walker_nav_menu_start_el', 'twentytwenty_nav_menu_social_icons', 999 );
 
 	/**
 	 * Switch off Genericons (used by Jetpack).
 	 */
-	function dequeue_my_css() {
+	function pressr_dequeue_genericons() {
 		if ( true === PRESSR_OPTION['genericons'] ) {
 			wp_dequeue_style( 'genericons' );
 			wp_deregister_style( 'genericons' );
 		}
 	}
-	add_action( 'wp_enqueue_scripts', 'dequeue_my_css', 100 );
+	add_action( 'wp_enqueue_scripts', 'pressr_dequeue_genericons', 100 );
 
 	/**
 	 * Switch off comments script (use if WP comments are not being used)
 	 */
-	function clean_header() {
-		if ( true === PRESSR_OPTION['comments'] ) {
+	function pressr_deregister_comments_script() {
+		if ( true === PRESSR_OPTION['comments_script'] ) {
 			wp_deregister_script( 'comment-reply' );
 		}
 	}
-	add_action( 'init', 'clean_header' );
+	add_action( 'init', 'pressr_deregister_comments_script' );
+
+	/**
+	 * Dequeue the skip link fix in certain themes
+	 */
+	function pressr_dequeue_focus_fix() {
+		if ( true === PRESSR_OPTION['skip_fix'] ) {
+			wp_dequeue_script( 'twentysixteen-skip-link-focus-fix' );
+			wp_dequeue_script( 'twentyseventeen-skip-link-focus-fix' );
+		}
+	}
+	add_action( 'wp_enqueue_scripts', 'pressr_dequeue_focus_fix', 100 );
 
 }
 
@@ -417,6 +427,7 @@ function pressr_get_options() {
 		'rest_api'         => false,
 		'shortlink'        => true,
 		'single_search'    => true,
+		'skip_fix'         => true,
 		'tidy_html'        => false,
 		'widget_style'     => true,
 		'wp_embed'         => false,
@@ -454,8 +465,9 @@ function pressr_get_options() {
 		'relationship'     => true,
 		'rest_api'         => true,
 		'shortlink'        => true,
+		'skip_fix'         => true,
 		'single_search'    => true,
-		'tidy_html'        => true,
+		'tidy_html'        => false,
 		'widget_style'     => true,
 		'wp_embed'         => true,
 		'xmlrpc'           => true,

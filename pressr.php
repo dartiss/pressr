@@ -300,26 +300,32 @@ function pressr_press_code() {
 	}
 
 	// Clean up attributes in style tags.
-	add_filter( 'style_loader_tag', function( string $tag, string $handle ): string {
+	add_filter(
+		'style_loader_tag',
+		function(
 
-		if ( true === PRESSR_OPTION['clean_attributes'] ) {
+		string $tag, string $handle ): string {
 
-			// Remove ID attribute.
-			$tag = str_replace( "id='${handle}-css'", '', $tag );
+			if ( true === PRESSR_OPTION['clean_attributes'] ) {
 
-			// Remove type attribute.
-			$tag = str_replace( " type='text/css'", '', $tag );
+				// Remove ID attribute.
+				$tag = str_replace( "id='${handle}-css'", '', $tag );
 
-			// Remove trailing slash.
-			$tag = str_replace( ' />', '>', $tag );
-			
-			// Remove double spaces.
-			$tag = str_replace( '  ', '', $tag );
-		}
+				// Remove type attribute.
+				$tag = str_replace( " type='text/css'", '', $tag );
 
-		return $tag;
+				// Remove trailing slash.
+				$tag = str_replace( ' />', '>', $tag );
+				
+				// Remove double spaces.
+				$tag = str_replace( '  ', '', $tag );
+			}
 
-	}, 10, 2 );
+			return $tag;
+		},
+		10,
+		2
+	);
 
 	// Remove main feed from meta.
 	if ( true === PRESSR_OPTION['feed'] ) {
@@ -382,6 +388,16 @@ function pressr_press_code() {
 	}
 	add_action( 'wp_enqueue_scripts', 'pressr_dequeue_focus_fix', 100 );
 
+	/**
+	 * Remove Jetpack's social menu support
+	 */
+	function pressr_remove_jetpack_social_menu_support() {
+		if ( true === PRESSR_OPTION['jetpack_social_menu'] ) {
+			remove_theme_support( 'jetpack-social-menu' );
+		}
+	}
+	add_action( 'after_setup_theme', 'pressr_remove_jetpack_social_menu_support', 11 ); 
+
 }
 
 add_filter( 'plugins_loaded', 'pressr_press_code' );
@@ -394,84 +410,46 @@ add_filter( 'plugins_loaded', 'pressr_press_code' );
  */
 function pressr_get_options() {
 
-	/**
-	// These are the settings for my own, production site.
-
-	define( 'PRESSR_OPTION', array(
-		'admin_bar'        => true,
-		'apple_icon'       => false,
-		'canonical'        => true,
-		'clean_attributes' => true,
-		'comments_feed'    => true,
-		'comments_script'  => false,
-		'dns_prefetch'     => false,
-		'double_spaces'    => true,
-		'emoji'            => false,
-		'feed'             => false,
-		'generator'        => true,
-		'genericons'       => false,
-		'gutenberg_css'    => false,
-		'html_comments'    => true,
-		'jetpack_css'      => false,
-		'jquery_migrate'   => true,
-		'ms_icon'          => true,
-		'no_js'            => false,
-		'other_feeds'      => true,
-		'live_writer'      => true,
-		'oembed'           => false,
-		'pingback'         => true,
-		'preconnect'       => true,
-		'print_css'        => true,
-		'profile_tag'      => true,
-		'relationship'     => true,
-		'rest_api'         => false,
-		'shortlink'        => true,
-		'single_search'    => true,
-		'skip_fix'         => true,
-		'tidy_html'        => false,
-		'widget_style'     => true,
-		'wp_embed'         => false,
-		'xmlrpc'           => false,
-	) );
-	**/
-
-	// This will switch all options on, for testing purposes.
-	define( 'PRESSR_OPTION', array(
-		'admin_bar'        => true,
-		'apple_icon'       => true,
-		'canonical'        => true,
-		'clean_attributes' => true,
-		'comments_feed'    => true,
-		'comments_script'  => true,
-		'dns_prefetch'     => true,
-		'double_spaces'    => true,
-		'emoji'            => true,
-		'feed'             => true,
-		'generator'        => true,
-		'genericons'       => true,
-		'gutenberg_css'    => true,
-		'html_comments'    => true,
-		'jetpack_css'      => true,
-		'jquery_migrate'   => true,
-		'ms_icon'          => true,
-		'no_js'            => true,
-		'oembed'           => true,
-		'other_feeds'      => true,
-		'live_writer'      => true,
-		'pingback'         => true,
-		'preconnect'       => true,
-		'print_css'        => true,
-		'profile_tag'      => true,
-		'relationship'     => true,
-		'rest_api'         => true,
-		'shortlink'        => true,
-		'skip_fix'         => true,
-		'single_search'    => true,
-		'tidy_html'        => false,
-		'widget_style'     => true,
-		'wp_embed'         => true,
-		'xmlrpc'           => true,
-	) );
+	define(
+		'PRESSR_OPTION',
+		array(
+			'admin_bar'           => true,
+			'apple_icon'          => true,
+			'canonical'           => true,
+			'clean_attributes'    => true,
+			'comments_feed'       => true,
+			'comments_script'     => true,
+			'dns_prefetch'        => true,
+			'double_spaces'       => true,
+			'emoji'               => true,
+			'feed'                => true,
+			'generator'           => true,
+			'genericons'          => true,
+			'gutenberg_css'       => true,
+			'html_comments'       => true,
+			'jetpack_css'         => true,
+			'jetpack_social_menu' => true,
+			'jquery_migrate'      => true,
+			'ms_icon'             => true,
+			'no_js'               => true,
+			'oembed'              => true,
+			'other_feeds'         => true,
+			'live_writer'         => true,
+			'pingback'            => true,
+			'preconnect'          => true,
+			'print_css'           => true,
+			'profile_tag'         => true,
+			'relationship'        => true,
+			'rest_api'            => true,
+			'shortlink'           => true,
+			'skip_fix'            => true,
+			'single_search'       => true,
+			'tidy_html'           => false,
+			'widget_style'        => true,
+			'wp_embed'            => true,
+			'xmlrpc'              => true,
+		)
+	);
 }
 
 /**

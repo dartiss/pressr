@@ -187,6 +187,11 @@ function pressr_callback( $buffer ) {
 		$buffer = pressr_remove_html( $buffer, "rel='preconnect'" );
 	}
 
+	// Remove Google fonts.
+	if ( true === PRESSR_OPTION['google_fonts'] ) {
+		$buffer = pressr_remove_html( $buffer, "href='https://fonts.googleapis.com" );
+	}
+
 	if ( true === PRESSR_OPTION['tidy_html'] ) {
 
 		// Remove spaces between HTML tags.
@@ -403,6 +408,7 @@ function pressr_get_options() {
 			'feed'                => true,
 			'generator'           => true,
 			'genericons'          => true,
+			'google_fonts'        => true,
 			'gutenberg_css'       => true,
 			'html_comments'       => true,
 			'jetpack_css'         => true,

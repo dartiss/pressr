@@ -2,10 +2,10 @@
 Contributors: dartiss
 Donate link: https://artiss.blog/donate
 Tags: compress, shrink, reduce, sustainable, sustainability, susty
-Requires at least: 4.6.0
-Tested up to: 5.4
+Requires at least: 4.6
+Tested up to: 5.6
 Requires PHP: 4.6
-Stable tag: 0.1.0
+Stable tag: 1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,7 +30,9 @@ Key features include...
 * Admin settings screen allows you to precisely define what actions are performed on your site
 * WordPress coding standards compliant, including WordPress VIP
 
-Please visit the [Github page](https://github.com/dartiss/pressr "Github") for the latest code development, planned enhancements and known issues.
+Iconography is courtesy of the very talented [Janki Rathod](https://www.fiverr.com/jankirathore) ♥️
+
+👉 Please visit the [Github page](https://github.com/dartiss/pressr "Github") for the latest code development, planned enhancements and known issues 👈
 
 == Acknowledgements ==
 
@@ -58,12 +60,12 @@ Whichever way you install Pressr, after activating it, go to Settings -> Pressr 
 
 == Changelog ==
 
-I use [Semantic Versioning](https://semver.org/) for this plugin.
+I use semantic versioning, with the first release being 1.0.
 
-= 0.1.0 =
+= 1.0 =
 * Initial release
 
 == Upgrade Notice ==
 
-= 0.1.0 =
+= 1.0 =
 * Initial release

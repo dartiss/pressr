@@ -7,6 +7,10 @@
  * @package Pressr
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	die( 'Invalid request.' );
+}
+
 /**
  * Add meta to plugin details
  *

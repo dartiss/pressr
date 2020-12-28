@@ -3,8 +3,8 @@
 Plugin Name: Pressr
 Plugin URI: https://github.com/dartiss/pressr
 Description: 🗜Reduce page size, creating smaller, more sustainable, site output.
-Version: 0.1.0
-Author: dartiss
+Version: 1.0
+Author: David Artiss
 Author URI: https://artiss.blog
 Text Domain: pressr
 
@@ -161,8 +161,10 @@ function pressr_callback( $buffer ) {
 
 	// Remove no-js.
 	if ( true === PRESSR_OPTION['no_js'] ) {
-		$buffer = str_replace( ' class="no-js"', '', $buffer );
-		$buffer = str_replace( " class='no-js'", '', $buffer );
+		//$buffer = str_replace( ' class="no-js"', '', $buffer );
+		//$buffer = str_replace( " class='no-js'", '', $buffer );
+		$buffer = pressr_remove_html( $buffer, 'no-js', 'html' );		
+		//$buffer = pressr_remove_html( $buffer, ' class="no-js no-svg"' );	
 		$buffer = str_replace( "<script>document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );</script>", '', $buffer );
 		$buffer = str_replace( "<script>(function(html){html.className = html.className.replace(/\bno-js\b/,'js')})(document.documentElement);</script>", '', $buffer );
 	}
@@ -190,6 +192,11 @@ function pressr_callback( $buffer ) {
 	// Remove Google fonts.
 	if ( true === PRESSR_OPTION['google_fonts'] ) {
 		$buffer = pressr_remove_html( $buffer, "href='https://fonts.googleapis.com" );
+	}
+
+	// Remove the skip link fix.
+	if ( true === PRESSR_OPTION['skip_fix'] ) {
+		$buffer = pressr_remove_script( $buffer, 'skip-link-focus-fix.js' );
 	}
 
 	if ( true === PRESSR_OPTION['tidy_html'] ) {
@@ -366,17 +373,6 @@ function pressr_deregister_comments_script() {
 add_action( 'init', 'pressr_deregister_comments_script' );
 
 /**
- * Dequeue the skip link fix in certain themes
- */
-function pressr_dequeue_focus_fix() {
-	if ( true === PRESSR_OPTION['skip_fix'] ) {
-		wp_dequeue_script( 'twentysixteen-skip-link-focus-fix' );
-		wp_dequeue_script( 'twentyseventeen-skip-link-focus-fix' );
-	}
-}
-add_action( 'wp_enqueue_scripts', 'pressr_dequeue_focus_fix', 100 );
-
-/**
  * Remove Jetpack's social menu support
  */
 function pressr_remove_jetpack_social_menu_support() {
@@ -446,26 +442,101 @@ function pressr_get_options() {
 /**
  * Remove a tag from supplied HTML
  *
- * Pass in some HTML and something from a tag to uniquely identify it and this function will remove the entire tag
+ * Pass in some HTML and something from a tag to uniquely identify it and this function will remove the entire tag.
+ * Alternatively, specify the tag to find and you can search/replace content within it.
+ *
+ * @param  string $html  The HTML to be modified.
+ * @param  string $find  Unique content of tag to find.
+ * @param  string $tag   (optional) tag to identify first.
+ *
+ * @return string        Modified HTML.
+ */
+function pressr_remove_html( $html, $find, $tag = '' ) {
+
+	$found = true;
+	if ( '' === $tag ) {
+		$tofind = '<';
+	} else {
+		$tofind = '<' . $tag . ' ';
+	}
+
+	while ( $found ) {
+		$pos = strpos( $html, $find );
+		if ( false !== $pos ) {
+			$tag_start = strrpos( substr( $html, 0, $pos ), $tofind );
+			$tag_end   = strpos( substr( $html, $pos ), '>' ) + $pos;
+			$remove    = substr( $html, $tag_start, $tag_end - $tag_start + 1 );
+			$html      = str_replace( $remove, '', $html );
+		} else {
+			$found = false;
+		}
+	}
+
+	return $html;
+}
+
+/**
+ * Remove a script from the supplied HTML
+ *
+ * Pass in some HTML and a script name and this function will remove it
  *
  * @param  string $html  The HTML to be modified.
  * @param  string $find  Unique content of tag to find.
  *
  * @return string        Modified HTML.
  */
-function pressr_remove_html( $html, $find ) {
+function pressr_remove_script( $html, $find ) {
 
 	$found = true;
-	while ( $found ) {
-		$pos = strpos( $html, $find );
-		if ( false !== $pos ) {
-			$tag_start = strrpos( substr( $html, 0, $pos ), '<' );
-			$tag_end   = strpos( substr( $html, $pos ), '>' ) + $pos;
-			$html      = str_replace( substr( $html, $tag_start, $tag_end - $tag_start + 1 ), '', $html );
-		} else {
-			$found = false;
-		}
+	$pos   = strpos( $html, $find );
+
+	if ( false !== $pos ) {
+		$tag_start = strrpos( substr( $html, 0, $pos ), '<script' );
+		$tag_end   = strpos( substr( $html, $pos ), '</script>' ) + $pos;
+		$html      = str_replace( substr( $html, $tag_start, $tag_end - $tag_start + 9 ), '', $html );
 	}
+
+	return $html;
+}
+
+/**
+ * Strip content from a page
+ *
+ * Pass in the HTML from a page and will strip out the content, leaving just the header and footer
+ *
+ * @param  string $html  The HTML to be stripped.
+ *
+ * @return array         Array containing content and footer/header
+ */
+function pressr_strip_out_content( $html ) {
+
+	$header = strpos( $html, '</head>' );
+	$footer = strrpos( $html, '<footer' );
+
+	if ( false === $footer ) {
+		$content['content']  = '';
+		$content['headfoot'] = $html;
+	} else {
+		$content['content']  = substr( $html, $header + 7, $footer - $header - 7 );
+		$content['headfoot'] = substr( $html, 0, $header + 7 ) . '=== Content ===' . substr( $html, $footer );
+	}
+
+	return $content;
+}
+
+/**
+ * Add page content back together again
+ *
+ * Pass in page content plus header/footer and this will put them back together again
+ *
+ * @param  string $html     The HTML to be modified.
+ * @param  string $content  Unique content of tag to find.
+ *
+ * @return string        Modified HTML.
+ */
+function pressr_add_content_back( $html, $content ) {
+
+	$html = str_replace( '=== Content ===', $content, $html );
 
 	return $html;
 }
